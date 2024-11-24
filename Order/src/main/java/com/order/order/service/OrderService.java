@@ -8,19 +8,23 @@ import com.order.order.comman.SuccessOrderResponse;
 import com.order.order.dto.OrderDTO;
 import com.order.order.model.Order;
 import com.order.order.repo.OrderRepo;
+import com.product.Product.dto.ProductDTO;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.TypeToken;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClientException;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 
 import java.util.List;
 
 @Service
 @Transactional
 public class OrderService {
-     private final WebClient webClient;
+     private final WebClient inventoryWebClient;
+     private final WebClient productWebClient;
 
 
     @Autowired
@@ -29,10 +33,12 @@ public class OrderService {
     @Autowired
     private ModelMapper modelMapper;
 
-    public OrderService(WebClient.Builder webClientBuilder ,OrderRepo orderRepo, ModelMapper modelMapper   ) {
-        this.webClient = webClientBuilder.baseUrl("http://localhost:8080/api/v1").build();
+    public OrderService(WebClient inventoryWebClient, WebClient productWebClient ,OrderRepo orderRepo, ModelMapper modelMapper   ) {
+        this.inventoryWebClient = inventoryWebClient;
+        this.productWebClient= productWebClient;
         this.orderRepo = orderRepo;
         this.modelMapper = modelMapper;
+
     }
 
     public List<OrderDTO> getAllOrders() {
@@ -46,7 +52,7 @@ public class OrderService {
 
         Integer itemId = orderDTO.getItemId();
         try{
-          InventoryDTO inventoryResponse=  webClient.get(  )
+          InventoryDTO inventoryResponse=  inventoryWebClient.get(  )
                     .uri(uriBuilder -> uriBuilder.path("/getinventory/{id}").build(itemId))
                     .retrieve()
                     .bodyToMono(InventoryDTO.class)
@@ -54,17 +60,39 @@ public class OrderService {
 
             assert inventoryResponse != null;
 
+          Integer productId = inventoryResponse.getProductId();
+            ProductDTO productResponse=  productWebClient.get(  )
+                    .uri(uriBuilder -> uriBuilder.path("/getproduct/{productId}").build(productId  ))
+                    .retrieve()
+                    .bodyToMono(ProductDTO .class)
+                    .block();
+
+
+
             System.out.println(inventoryResponse);
+            assert productResponse != null;
+
+
+
 
             if(inventoryResponse.getQuantity()>0){
-              orderRepo.save(modelMapper.map(orderDTO, Order.class));
+                if (productResponse.getForSale() == 1) {
+                    orderRepo.save(modelMapper.map(orderDTO, Order.class));
+                }
+                else{
+                    return new ErrorOrderResponse("This item not for sale");
+                }
+
               return new SuccessOrderResponse(orderDTO);
           }else{
                 return new ErrorOrderResponse("Item not available");
             }
 
-        } catch (Exception e){
-            e.printStackTrace();
+        } catch (WebClientResponseException e){
+
+            if(e.getStatusCode().is5xxServerError()){
+                return new ErrorOrderResponse("Something went wrong");
+            }
         }
 
 
