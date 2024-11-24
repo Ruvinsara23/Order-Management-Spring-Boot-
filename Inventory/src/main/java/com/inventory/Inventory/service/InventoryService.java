@@ -25,6 +25,11 @@ public class InventoryService {
         return modelMapper.map(inventoryList, new TypeToken<List<InventoryDTO>>(){}.getType());
     }
 
+    public InventoryDTO getInventoryByItemId(int itemId) {
+        Inventory inventory = inventoryRepo.getInventoryByItemId(itemId);
+        return modelMapper.map(inventory, new TypeToken<InventoryDTO>(){}.getType());
+    }
+
     public InventoryDTO saveInventory(InventoryDTO inventoryDTO) {
         Inventory inventory = modelMapper.map(inventoryDTO, Inventory.class);
         Inventory savedInventory = inventoryRepo.save(inventory);
@@ -41,6 +46,11 @@ public class InventoryService {
         Inventory inventory = inventoryRepo.findById(inventoryDTO.getId())
                 .orElseThrow(() -> new RuntimeException("Product not found"));
         inventoryRepo.delete(inventory);
+        return "Product deleted successfully";
+    }
+
+    public String deleteInventoryById(int id) {
+        inventoryRepo.deleteById(id);
         return "Product deleted successfully";
     }
 }

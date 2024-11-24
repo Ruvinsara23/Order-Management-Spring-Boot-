@@ -20,6 +20,11 @@ public class InventoryController {
         return inventoryService.getAllInventory();
     }
 
+    @GetMapping("/getinventory/{itemId}")
+    public InventoryDTO getInventoryByItemId(@PathVariable int itemId) {
+        return inventoryService.getInventoryByItemId(itemId);
+    }
+
     @PostMapping("/addinventory")
     public InventoryDTO addInventory(@RequestBody InventoryDTO inventoryDTO) {
         return inventoryService.saveInventory(inventoryDTO);
@@ -33,6 +38,11 @@ public class InventoryController {
     @DeleteMapping("/deleteinventory")
     public String deleteInventory(@RequestBody InventoryDTO inventoryDTO) {
         return inventoryService.deleteInventory(inventoryDTO);
+    }
+
+    @DeleteMapping("/deleteinventory/{id}")
+    public String deleteInventoryById(@PathVariable int id) {
+        return inventoryService.deleteInventoryById(id);
     }
 }
 

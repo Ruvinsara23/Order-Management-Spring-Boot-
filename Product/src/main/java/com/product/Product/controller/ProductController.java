@@ -23,6 +23,12 @@ private ProductService productService;
     return  productService.getAllProduct();
 }
 
+@GetMapping("/getproduct/{productId}")
+public ProductDTO getProduct(@PathVariable int productId) {
+    return productService.getProductById(productId);
+
+}
+
 @PostMapping("/addproduct")
     public ProductDTO addProduct(@RequestBody ProductDTO productDTO) {
     return  productService.saveProduct(productDTO);
