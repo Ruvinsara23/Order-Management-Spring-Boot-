@@ -56,6 +56,7 @@ public class OrderService {
                     .uri(uriBuilder -> uriBuilder.path("/getinventory/{id}").build(itemId))
                     .retrieve()
                     .bodyToMono(InventoryDTO.class)
+                   .doOnError(error -> System.err.println("Error in Inventory WebClient: " + error.getMessage()))
                     .block();
 
             assert inventoryResponse != null;
@@ -65,6 +66,7 @@ public class OrderService {
                     .uri(uriBuilder -> uriBuilder.path("/getproduct/{productId}").build(productId  ))
                     .retrieve()
                     .bodyToMono(ProductDTO .class)
+                    .doOnError(error -> System.err.println("Error in Product WebClient: " + error.getMessage()))
                     .block();
 
 
@@ -93,13 +95,18 @@ public class OrderService {
             if(e.getStatusCode().is5xxServerError()){
                 return new ErrorOrderResponse("Something went wrong");
             }
+            return new ErrorOrderResponse("Failed to fetch data: " + e.getStatusText());
+
+        } catch (Exception e) {
+            System.err.println("Unexpected error: " + e.getMessage());
+            return new ErrorOrderResponse("Unexpected error occurred");
         }
 
 
 //        Order order = modelMapper.map(orderDTO, Order.class);
 //        Order savedOrder=orderRepo.save(order);
 //        return modelMapper.map(savedOrder ,OrderDTO.class);
-return new ErrorOrderResponse("Error in saving order");
+
     }
 
 
